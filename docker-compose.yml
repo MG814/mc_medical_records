@@ -1,14 +1,28 @@
-version: "3.8"
+version: "3.9"
 services:
   db-medical_records:
     image: postgres
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=admin123
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     env_file:
       - src/.env
     ports:
-      - "5432:5432"
-volumes:
-  db-medical_records:
+      - "5435:5432"
+    networks:
+      - mc_network
+  web-medical-records:
+    build: .
+    command: python src/manage.py runserver 0.0.0.0:8300
+    volumes:
+      - ./src:/app/src
+    ports:
+      - "8300:8300"
+    networks:
+      - mc_network
+    depends_on:
+      - db-medical_records
+networks:
+  mc_network:
+    external: true
