@@ -1,4 +1,4 @@
-name: API Gateway CI
+name: API Medical Records CI
 
 on:
   push:
@@ -58,3 +58,17 @@ jobs:
       run: |
         safety check
       continue-on-error: true
+
+
+
+#networks:
+#  mc_network: # mc_accounts
+#    external: true
+
+
+# API GATEWAY
+# networks:
+#  mc_accounts:
+#    external: True
+#  mc_visits:
+#     external: True
