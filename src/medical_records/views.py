@@ -1,20 +1,23 @@
 from rest_framework import status
-from rest_framework.mixins import UpdateModelMixin, RetrieveModelMixin
+from rest_framework.mixins import UpdateModelMixin, RetrieveModelMixin, ListModelMixin
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import AllowAny
-from .models import MedicalRecord
-from .serializers import MedicalRecordSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action
+
+from .models import MedicalRecord
+from .serializers import MedicalRecordSerializer
+from core.settings import HTTP_URL
+
 import requests
 
 
-class MedicalRecordViewSet(GenericViewSet, RetrieveModelMixin, UpdateModelMixin):
+class MedicalRecordViewSet(GenericViewSet, RetrieveModelMixin, UpdateModelMixin, ListModelMixin):
     serializer_class = MedicalRecordSerializer
     queryset = MedicalRecord.objects.all()
     permission_classes = [AllowAny]
 
-    @action(methods=['GET'], detail=False, url_path='patients/(?P<patient_id>\d+)/medical-records') # patients/<patient_id>/medical-records
+    @action(methods=['GET'], detail=False, url_path='patients/(?P<patient_id>\d+)/medical-records')
     def get_patient_records(self, request, patient_id=None):
         queryset = self.get_queryset().filter(patient_id=patient_id)
 
@@ -32,7 +35,7 @@ class MedicalRecordViewSet(GenericViewSet, RetrieveModelMixin, UpdateModelMixin)
 
         current_user_role = self.request.headers.get('role')
         token = self.request.headers.get('Authorization')
-        accounts_service_url = 'http://web-accounts:8100/users/'
+        accounts_service_url = f'{HTTP_URL}/users/'
 
         patient_id = self.request.data.get('patient_id')
         patient_url = f'{accounts_service_url}{patient_id}/'
@@ -41,7 +44,7 @@ class MedicalRecordViewSet(GenericViewSet, RetrieveModelMixin, UpdateModelMixin)
             'Authorization': token
         }
 
-        patient_response = requests.get(patient_url, headers=headers)
+        patient_response = requests.get(patient_url, headers=headers, timeout=5)
 
         if patient_response.status_code == status.HTTP_404_NOT_FOUND:
             return Response({'message': 'Patient not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -49,7 +52,7 @@ class MedicalRecordViewSet(GenericViewSet, RetrieveModelMixin, UpdateModelMixin)
         doctor_id = self.request.data.get('doctor_id')
         doctor_url = f'{accounts_service_url}{doctor_id}/'
 
-        doctor_response = requests.get(doctor_url, headers=headers)
+        doctor_response = requests.get(doctor_url, headers=headers, timeout=5)
 
         if doctor_response.status_code == status.HTTP_404_NOT_FOUND:
             return Response({'message': 'Doctor not found.'}, status=status.HTTP_404_NOT_FOUND)
